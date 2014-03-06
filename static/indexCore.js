@@ -56,7 +56,7 @@ function userify( word ){ // Return prettier words for the user to read. ex: act
 
 LocationView = Backbone.View.extend({
 	events: {
-		'click .test': 'showLocation'
+		'click': 'showLocation'
 	},
 	showLocation: function(){
 		$('.aLocation').addClass('lessInfo');
@@ -64,7 +64,7 @@ LocationView = Backbone.View.extend({
 		map.panTo( this.model.get('LatLng') );
 	},
 	render: function(){
-		var foo = $('.listOfLocations').append('<li class="aLocation" data-id="'+this.model.id+'"><span class="test">'+this.model.get('locations')+'</span><br/>Release year: '+this.model.get('release_year')+'<br/>Fun facts: '+this.model.get('fun_facts')+'</li>');
+		var foo = $('.listOfLocations').append('<li class="aLocation lessInfo" data-id="'+this.model.id+'"><span class="test">'+this.model.get('locations')+'</span><br/>Release year: '+this.model.get('release_year')+'<br/><span class="funFacts">Fun facts: '+this.model.get('fun_facts')+'</span></li>');
 		this.$el = $('.aLocation[data-id='+this.model.id+']');
 		this.delegateEvents();
 		var that = this;

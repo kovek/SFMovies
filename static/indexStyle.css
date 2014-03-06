@@ -19,3 +19,11 @@ height:1000px;
 background:white;
 }
 
+.lessInfo .funFacts{
+	display:none;
+}
+
+.aLocation{
+	margin:2em;
+	background: white;
+}
