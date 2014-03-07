@@ -60,6 +60,19 @@ def searchTitle():
 	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
 
+@app.route('/infoOnTitle', methods=['GET'])
+def infoOnTitle():
+	query = str(request.args.get('q'))
+	db = getDb()
+	#search the db
+	results = db.execute('select * from row where title="'+query+'" group by title;') # TODO or should we change %like% to %like. ? 
+	entries = results.fetchall() # TODO
+	out = formatSqliteForJSON2( entries )
+	out = out[1:len(out)-1]
+	return Response(out, mimetype="application/json")
+
+
+
 @app.route('/locationsOfMovie', methods=['GET'])
 def searchMovieLocations():
 #this page returns a JSON string of all the movie titles which resemble what the user typed in
@@ -72,6 +85,10 @@ def searchMovieLocations():
 	entries = results.fetchall() # TODO
 	out = formatSqliteForJSON2( entries )
 	return Response(out, mimetype="application/json")
+
+@app.route('/test1', methods=['GET'])
+def test1():
+	return '[{"foo":"AA"},{"foo":"BB"},{"foo":"CC"}]'
 	
 @app.route('/locationsOfRandomMovies', methods=['GET'])
 def randomMovieLocations():

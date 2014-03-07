@@ -65,13 +65,9 @@ function userify( word ){ // Return prettier words for the user to read. ex: act
 	"writer":"Writer"};
 
 function templateLocationForList( t ){
-	out = "<div data-id="+t.id+" class='aLocation'>";
-	at = t.attributes;
-	for(a in at){
-		out += '<span class='+a+'>'+userify(a)+': '+at[a]+'<br/></span>';
-	}	
+	out = "<div data-id=l"+t.id+" class='aLocation'>";
+	out += '<span class="location">Location: '+t.get('locations')+'<br/></span>';
 	out += "</div>";
-	out += '</br>';
 	return out;
 }
 
@@ -80,20 +76,25 @@ LocationView = Backbone.View.extend({
 		'click': 'showLocation'
 	},
 	showLocation: function(){
+		console.log('he clicked me');
 		$('.aLocation').addClass('lessInfo');
 		this.$el.removeClass('lessInfo');
 		map.panTo( this.model.get('LatLng') );
+		myRouter.navigate('movie/'+encodeURI( this.model.get('title') ), {trigger: true}); // TODO instead of encodeURI, change spaces for -dashes?
 		$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
 	},
 	render: function(){
 		theHtml = templateLocationForList( this.model );
-		var foo = $('.listOfLocations').append( theHtml );
-		$('.aLocation').addClass('lessInfo');
-		this.$el = $('.aLocation[data-id='+this.model.id+']');
-		this.delegateEvents();
+		var movieEl = $('.listOfLocations .aMovie[data-name="'+this.model.get('title')+'"]');
+
+		movieEl.find('.theLocations').append( theHtml );
 		var that = this;
 		theLocation = this.model.get('locations') + " San Francisco";
 		geocoder.geocode({ address: theLocation }, function(results, status){
+			if(results == null){
+				console.log('google did not want to geolocate this address');
+				return;
+			}
 			theLatLng = results[0].geometry.location; 
 			that.model.set('LatLng', theLatLng);
 			markerTitle = that.model.get('title') + ' ' + that.model.id;
@@ -104,11 +105,13 @@ LocationView = Backbone.View.extend({
 			});
 			google.maps.event.addListener(newMarker, 'click', function(){
 				that.showLocation();
-				$('.listOfLocations').animate({ scrollTop: that.$el.offset().top });
 			});
 			markerArray.push( newMarker );
 
 		});
+		this.$el = $('.aLocation[data-id='+this.model.id+']');
+		this.delegateEvents();
+		allMoviesLoaded=true;
 		return this;
 	}
 });
@@ -116,6 +119,7 @@ Location = Backbone.Model.extend({
 	initialize: function(){
 		//!!! this.LatLng =  __geolocate( this.location )__;
 		
+		//debugger;
 		// maybe add bounds to the request?
 		// maybe add a region to the request?
 		var that = this;
@@ -129,31 +133,91 @@ function theFunctionWhenALocationIsclicked(){
 	map.panTo(this.LatLng);
 }
 
+
 Locations = Backbone.Collection.extend({
 	model: Location,
 	url: '/locationsOfMovie',
+	
 	display: function(){
 		this.each( function(aLocation){
 			// OK, I am not exactly sure which method should be used to display the locations list!
 			// I will be calling the render function of each view created by each location.
 			// I know there might be better ways, but I better have everything broken down into simple actions. 
+			aLocation.view.set({parent: this.get('parent') });
+			aLocation.set({parent: this.get('parent') });
+			debugger;
 			aLocation.view.render();
 		});	
 	}
 });
 Movie = Backbone.Model.extend({
+	that: null,
+	url: 'infoOnTitle',
 	initialize: function(){
-		this.locations = new Locations();
+		that = this;
+		this.fetch({
+			data:{
+				'q': this.get('title')
+			},
+			success: function(model, response, options){
+				aMovieView = new MovieView({model: model});
+				aMovieView.render();
+
+				theTitle = model.get('title');
+				this.locations = new Locations();
+				this.locations.url = '/locationsOfMovie';
+				this.locations.set({parent: model.get('title')});
+				this.locations.fetch({reset:true,
+					data: {'q': model.get('title') },
+					success: function(collection, response, options){
+						collection.each( function(model){ model.view.render(); });
+						
+						aMovieView.$el = $(".aMovie[data-name='"+aMovieView.model.get('title')+"'] .title");	
+						aMovieView.delegateEvents();
+					}
+				});
+			}
+		});
 	},
 
 });
-Movies = Backbone.Collection.extend({});
+MovieView = Backbone.View.extend({
+	initialize: function(){
+	
+	},
+	events:{
+		'click': 'choseMovie'
+	},
+	render: function(){
+		$('.listOfLocations').append( this.templateOfMovie(this.model) );		
+		this.$el = $('.aMovie[data-name="'+this.model.get('title')+'"]'); 
+		this.delegateEvents();
+	},
+	templateOfMovie: function( t ){
+		out = "<div data-id="+t.id+" class='aMovie lessInfo' data-name='"+t.get('title')+"'>";
+		at = t.attributes;
+		out += '<span class="theTitle">'+at['title']+'<br/></span>';
+		out += '<div class="extra">';
+		for(a in at){
+			out += '<span class='+a+'>'+userify(a)+': '+at[a]+'<br/></span>';
+		}	
+		out += "<div class='theLocations'></div>";
+		out += '</div>';
+		out += "</div>";
+		out += '</br>';
+		return out;
+	},
+	choseMovie: function(){
+		console.log('he clicked me, the movie');
+		myRouter.navigate('movie/'+this.model.get('title'), {trigger:true});
+	}
+});
 
-var selectedMovie;
-function ONSEARCHCONFIRMED(){
-selectedMovie = "the selected movie";
-// change URL to another route: movieSelected
-}
+
+Movies = Backbone.Collection.extend({
+	model: Movie
+});
+
 
 SearchResults = Backbone.Collection.extend({
 	model: SearchResult,
@@ -178,6 +242,7 @@ theAllTitles.fetch({
 		console.log('got the results');
 		theAllTitles.each( function(aSearchResult){
 			listOfUniqueTitles.push( aSearchResult.get('title') );
+
 		});
 		$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
 	},
@@ -194,12 +259,15 @@ markerArray = [];
 }
 
 // var selectedItem; => selectedMovie
+var allMoviesLoaded = false,
 Router = Backbone.Router.extend({
 	routes: {
-		'': 'home',	   
+		'': 'all',
+		'random': 'random',	   
 		'movie/:title': 'showMovieLocations'
 	},
 	showMovieLocations: function(title){
+		/*
 		removeAllMarkers();
 		console.log('the title is: ' + title);
 		// clear search view
@@ -209,8 +277,24 @@ Router = Backbone.Router.extend({
 			$('.listOfLocations').empty();
 			theLocationsList.display();
 		}});
+		*/
+		if(allMoviesLoaded == false){
+			this.all();	
+			window.setTimeout( function(){
+					$('.listOfLocations .aMovie').addClass('lessInfo');	
+					var theMovie = $('.listOfLocations .aMovie[data-name="'+title+'"');
+					$('.listOfLocations').animate({ scrollTop: theMovie.offset().top });
+					theMovie.removeClass('lessInfo');
+		   	}, 10000);
+		}else{
+			debugger;
+			$('.listOfLocations .aMovie').addClass('lessInfo');	
+			var theMovie = $('.listOfLocations .aMovie[data-name="'+title+'"');
+			$('.listOfLocations').animate({ scrollTop: theMovie.offset().top });
+			theMovie.removeClass('lessInfo');
+		}
 	},
-	home: function(){
+	random: function(){
 
 		removeAllMarkers();
 
@@ -237,16 +321,16 @@ Router = Backbone.Router.extend({
 				console.log('something bad happened with the random movies');
 			}
 		});
+	},
+	all: function(){
+
+		removeAllMarkers();
+		allMovies = new Movies();
+		allMovies.url = '/allTitles';
+		allMovies.fetch();
 	}
 });
 var myRouter = new Router();
-/*
-myRouter.on('route:home', function(){
-// TODO do nothing?
-});
-myRouter.on('route:showMovieLocations', function(title){
-	console.l});
-*/
 Backbone.history.start();
 var mainPage = new Router();
 var theSearchResults = new SearchResults();
