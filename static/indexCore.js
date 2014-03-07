@@ -65,11 +65,12 @@ function userify( word ){ // Return prettier words for the user to read. ex: act
 	"writer":"Writer"};
 
 function templateLocationForList( t ){
-	out = "";
+	out = "<div data-id="+t.id+" class='aLocation'>";
 	at = t.attributes;
 	for(a in at){
-		out += '<span class='+a+'>'+userify(a)+': '+at[a]+'</span><br/>';
+		out += '<span class='+a+'>'+userify(a)+': '+at[a]+'<br/></span>';
 	}	
+	out += "</div>";
 	out += '</br>';
 	return out;
 }
@@ -82,10 +83,12 @@ LocationView = Backbone.View.extend({
 		$('.aLocation').addClass('lessInfo');
 		this.$el.removeClass('lessInfo');
 		map.panTo( this.model.get('LatLng') );
+		$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
 	},
 	render: function(){
 		theHtml = templateLocationForList( this.model );
 		var foo = $('.listOfLocations').append( theHtml );
+		$('.aLocation').addClass('lessInfo');
 		this.$el = $('.aLocation[data-id='+this.model.id+']');
 		this.delegateEvents();
 		var that = this;
@@ -101,7 +104,7 @@ LocationView = Backbone.View.extend({
 			});
 			google.maps.event.addListener(newMarker, 'click', function(){
 				that.showLocation();
-				$('.searchContainer').animate({ scrollTop: that.$el.offset().top });
+				$('.listOfLocations').animate({ scrollTop: that.$el.offset().top });
 			});
 			markerArray.push( newMarker );
 
