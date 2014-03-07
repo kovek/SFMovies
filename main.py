@@ -1,4 +1,5 @@
 import os # for the sqlite3 database
+import random
 import json
 import sqlite3
 from flask import Flask, render_template, g, request, Response
@@ -47,14 +48,14 @@ def mainPage():
 #just render the main page
 	return render_template('index.html')
 
-@app.route('/search', methods=['GET'])
+@app.route('/allTitles', methods=['GET'])
 def searchTitle():
 #this page returns a JSON string of all the movie titles which resemble what the user typed in
 	#Get the q argument in the url
 	query = str(request.args.get('q'))
 	db = getDb()
 	#search the db
-	results = db.execute('select distinct title from row where title like "%'+query+'%";') # TODO or should we change %like% to %like. ? 
+	results = db.execute('select distinct title from row where 1;') # TODO or should we change %like% to %like. ? 
 	entries = results.fetchall() # TODO
 	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
@@ -69,6 +70,25 @@ def searchMovieLocations():
 	print query
 	results = db.execute('select * from row where title = "'+query+'";')
 	entries = results.fetchall() # TODO
+	out = formatSqliteForJSON2( entries )
+	return Response(out, mimetype="application/json")
+	
+@app.route('/locationsOfRandomMovies', methods=['GET'])
+def randomMovieLocations():
+#this page returns a JSON string of all the movie titles which resemble what the user typed in
+	#Get the q argument in the url
+	query = str(request.args.get('boundaries'))
+	db = getDb()
+	#search the db
+	print query
+	results = db.execute('select * from row where 1;')
+	entries = results.fetchall() # TODO
+	for entry in entries:
+		x = random.randint(1,3)
+		if x/3 == 0:
+			entries.remove(entry)
+	random.shuffle(entries)
+	entries = entries[0:5]
 	out = formatSqliteForJSON2( entries )
 	return Response(out, mimetype="application/json")
 	

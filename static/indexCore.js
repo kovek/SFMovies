@@ -51,8 +51,28 @@ function moreInfo(){
 }
 
 function userify( word ){ // Return prettier words for the user to read. ex: actor_1 -> First actor
-	return dictionary.indexOf(word) != -1 ? dictionary[word] : word;	
-} var dictionary = {"actor_1": "First actor", "actor_2":"Second actor", "actor_3":"Third actor"};
+	return dictionary[word] != undefined ? dictionary[word] : word;	
+} var dictionary = {
+	"title":"Title",
+	"release_date": "Release Date",
+	"production_company": "Production Company",
+	"director":"Director",
+	"actor_1": "First actor",
+	"actor_2":"Second actor",
+	"actor_3":"Third actor",
+	"locations": "Locations",
+	"distributor": "Distributor",
+	"writer":"Writer"};
+
+function templateLocationForList( t ){
+	out = "";
+	at = t.attributes;
+	for(a in at){
+		out += '<span class='+a+'>'+userify(a)+': '+at[a]+'</span><br/>';
+	}	
+	out += '</br>';
+	return out;
+}
 
 LocationView = Backbone.View.extend({
 	events: {
@@ -64,7 +84,8 @@ LocationView = Backbone.View.extend({
 		map.panTo( this.model.get('LatLng') );
 	},
 	render: function(){
-		var foo = $('.listOfLocations').append('<li class="aLocation lessInfo" data-id="'+this.model.id+'"><span class="test">'+this.model.get('locations')+'</span><br/>Release year: '+this.model.get('release_year')+'<br/><span class="funFacts">Fun facts: '+this.model.get('fun_facts')+'</span></li>');
+		theHtml = templateLocationForList( this.model );
+		var foo = $('.listOfLocations').append( theHtml );
 		this.$el = $('.aLocation[data-id='+this.model.id+']');
 		this.delegateEvents();
 		var that = this;
@@ -80,6 +101,7 @@ LocationView = Backbone.View.extend({
 			});
 			google.maps.event.addListener(newMarker, 'click', function(){
 				that.showLocation();
+				$('.searchContainer').animate({ scrollTop: that.$el.offset().top });
 			});
 			markerArray.push( newMarker );
 
@@ -141,39 +163,23 @@ SearchResults = Backbone.Collection.extend({
 	}
 });
 
-SearchArea = Backbone.View.extend({
-	
-	events: {
-		//when the user types in something, search
-		"keyup .searchBox": "search",
-	},
-
-	initialize: function(){
-
-	},
-
-	search: function(e){
-		query = this.$('.searchBox').val(); // input box value
-		var that = this;
-
-		//if(query.length < 3) return; // less than three characters probably doesn't mean anything
+AllTitles = Backbone.Collection.extend({
+	model: SearchResult,
+	url: '/allTitles',
+});
+theAllTitles = new AllTitles();
+theAllTitles.fetch({
+	reset:true,
+	success: function(){
 		listOfUniqueTitles = [];
-		theSearchResults.fetch({
-			reset:true,
-			data: {'q': query },
-			success: function(){ // take the titles given by the server and store them in a simple array. Then, trigger the autocompletion
-				listOfUniqueTitles = [];
-				console.log('got the results');
-				theSearchResults.each( function(aSearchResult){
-					listOfUniqueTitles.push( aSearchResult.get('title') );
-				});
-				$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
-				//$('.searchBox').keyup();
-			},
-			error: function(){
-				console.log('something bad happened');
-			}
+		console.log('got the results');
+		theAllTitles.each( function(aSearchResult){
+			listOfUniqueTitles.push( aSearchResult.get('title') );
 		});
+		$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
+	},
+	error: function(){
+		console.log('something bad happened');
 	}
 });
 
@@ -200,6 +206,34 @@ Router = Backbone.Router.extend({
 			$('.listOfLocations').empty();
 			theLocationsList.display();
 		}});
+	},
+	home: function(){
+
+		removeAllMarkers();
+
+		theRandomMovies = new Locations();
+		theRandomMovies.url = '/locationsOfRandomMovies'
+		theRandomMovies.fetch({
+			reset:true,
+			success: function(){
+				$('.listOfLocations').empty();
+				theRandomMovies.each( function(model){
+
+					var persist = theRandomMovies.find( function( aRandomMovie ){
+						return model.get('locations') == aRandomMovie.get('locations'); 
+					});	
+					if(persist != null && persist != model){
+						debugger;
+						persist.set({title: persist.get('title') +" &\n "+ model.get('title') });
+						theRandomMovies.remove( model );
+					}
+				});
+				theRandomMovies.display();
+			},
+			error: function(){
+				console.log('something bad happened with the random movies');
+			}
+		});
 	}
 });
 var myRouter = new Router();
@@ -212,5 +246,4 @@ myRouter.on('route:showMovieLocations', function(title){
 */
 Backbone.history.start();
 var mainPage = new Router();
-var theSearchArea = new SearchArea({ el: $('.searchContainer') });
 var theSearchResults = new SearchResults();
