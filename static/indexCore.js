@@ -75,13 +75,14 @@ LocationView = Backbone.View.extend({
 	events: {
 		'click': 'showLocation'
 	},
-	showLocation: function(){
+	showLocation: function(e){
+		e.stopPropagation();
 		console.log('he clicked me');
 		$('.aLocation').addClass('lessInfo');
 		this.$el.removeClass('lessInfo');
 		map.panTo( this.model.get('LatLng') );
 		myRouter.navigate('movie/'+encodeURI( this.model.get('title') ), {trigger: true}); // TODO instead of encodeURI, change spaces for -dashes?
-		$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
+		//$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
 	},
 	render: function(){
 		theHtml = templateLocationForList( this.model );
@@ -107,9 +108,12 @@ LocationView = Backbone.View.extend({
 				that.showLocation();
 			});
 			markerArray.push( newMarker );
+			that.model.set({myMarker: newMarker});
+			debugger;
 
 		});
-		this.$el = $('.aLocation[data-id='+this.model.id+']');
+		debugger;
+		this.$el = movieEl.find('.aLocation[data-id=l'+this.model.id+']');
 		this.delegateEvents();
 		allMoviesLoaded=true;
 		return this;
@@ -164,10 +168,10 @@ Movie = Backbone.Model.extend({
 				aMovieView.render();
 
 				theTitle = model.get('title');
-				this.locations = new Locations();
-				this.locations.url = '/locationsOfMovie';
-				this.locations.set({parent: model.get('title')});
-				this.locations.fetch({reset:true,
+				model.locations = new Locations();
+				model.locations.url = '/locationsOfMovie';
+				model.locations.set({parent: model.get('title')});
+				model.locations.fetch({reset:true,
 					data: {'q': model.get('title') },
 					success: function(collection, response, options){
 						collection.each( function(model){ model.view.render(); });
@@ -210,6 +214,18 @@ MovieView = Backbone.View.extend({
 	choseMovie: function(){
 		console.log('he clicked me, the movie');
 		myRouter.navigate('movie/'+this.model.get('title'), {trigger:true});
+		debugger;
+		$('.listOfLocations .aMovie').addClass('lessInfo');	
+		var theMovie = $('.listOfLocations .aMovie[data-name="'+this.model.get('title')+'"]');
+		$('.listOfLocations').animate({ scrollTop: theMovie.offset().top + theMovie.parent().scrollTop() });
+		theMovie.removeClass('lessInfo');
+		for(var i = 0; i < markerArray.length; i++){
+			markerArray[i].setVisible(false);
+		}
+		debugger;
+		this.model.locations.each( function(model){
+			model.get('myMarker').setVisible(true);
+		});
 	}
 });
 
@@ -242,7 +258,6 @@ theAllTitles.fetch({
 		console.log('got the results');
 		theAllTitles.each( function(aSearchResult){
 			listOfUniqueTitles.push( aSearchResult.get('title') );
-
 		});
 		$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
 	},
@@ -281,17 +296,11 @@ Router = Backbone.Router.extend({
 		if(allMoviesLoaded == false){
 			this.all();	
 			window.setTimeout( function(){
-					$('.listOfLocations .aMovie').addClass('lessInfo');	
-					var theMovie = $('.listOfLocations .aMovie[data-name="'+title+'"');
-					$('.listOfLocations').animate({ scrollTop: theMovie.offset().top });
-					theMovie.removeClass('lessInfo');
+				$('.listOfLocations .aMovie[data-name="'+title+'"]').click();
 		   	}, 10000);
 		}else{
+			$('.listOfLocations .aMovie[data-name="'+title+'"]').click();
 			debugger;
-			$('.listOfLocations .aMovie').addClass('lessInfo');	
-			var theMovie = $('.listOfLocations .aMovie[data-name="'+title+'"');
-			$('.listOfLocations').animate({ scrollTop: theMovie.offset().top });
-			theMovie.removeClass('lessInfo');
 		}
 	},
 	random: function(){

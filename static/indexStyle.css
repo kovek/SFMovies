@@ -16,6 +16,10 @@ left:0;
 .extra{
 }
 
+.searchBox{
+width:100%;
+}
+
 .searchContainer{
 z-index:2;
 position:absolute;
