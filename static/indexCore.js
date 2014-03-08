@@ -76,8 +76,9 @@ LocationView = Backbone.View.extend({
 		'click': 'showLocation'
 	},
 	showLocation: function(e){
-		e.stopPropagation();
 		e.stopImmediatePropagation();
+		e.stopPropagation();
+		e.preventDefault();
 		console.log('he clicked me');
 		$('.aLocation').addClass('lessInfo');
 		this.$el.removeClass('lessInfo');
@@ -94,6 +95,7 @@ LocationView = Backbone.View.extend({
 		this.$el = movieEl.find('.aLocation[data-id=l'+this.model.id+']');
 		this.delegateEvents();
 		allMoviesLoaded=true;
+		this.createMarker();
 		return this;
 	},
 	createMarker: function(){
@@ -113,7 +115,7 @@ LocationView = Backbone.View.extend({
 				title: markerTitle
 			});
 			google.maps.event.addListener(newMarker, 'click', function(){
-				that.showLocation();
+				that.$el.click();
 			});
 			markerArray.push( newMarker );
 			that.model.set({myMarker: newMarker});
@@ -144,6 +146,7 @@ Locations = Backbone.Collection.extend({
 	url: '/locationsOfMovie',
 	
 	display: function(){
+		var that = this;
 		this.each( function(aLocation){
 			// OK, I am not exactly sure which method should be used to display the locations list!
 			// I will be calling the render function of each view created by each location.
