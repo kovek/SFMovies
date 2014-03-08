@@ -77,6 +77,7 @@ LocationView = Backbone.View.extend({
 	},
 	showLocation: function(e){
 		e.stopPropagation();
+		e.stopImmediatePropagation();
 		console.log('he clicked me');
 		$('.aLocation').addClass('lessInfo');
 		this.$el.removeClass('lessInfo');
@@ -89,8 +90,15 @@ LocationView = Backbone.View.extend({
 		var movieEl = $('.listOfLocations .aMovie[data-name="'+this.model.get('title')+'"]');
 
 		movieEl.find('.theLocations').append( theHtml );
-		var that = this;
+
+		this.$el = movieEl.find('.aLocation[data-id=l'+this.model.id+']');
+		this.delegateEvents();
+		allMoviesLoaded=true;
+		return this;
+	},
+	createMarker: function(){
 		theLocation = this.model.get('locations') + " San Francisco";
+		var that = this;
 		geocoder.geocode({ address: theLocation }, function(results, status){
 			if(results == null){
 				console.log('google did not want to geolocate this address');
@@ -109,14 +117,7 @@ LocationView = Backbone.View.extend({
 			});
 			markerArray.push( newMarker );
 			that.model.set({myMarker: newMarker});
-			debugger;
-
 		});
-		debugger;
-		this.$el = movieEl.find('.aLocation[data-id=l'+this.model.id+']');
-		this.delegateEvents();
-		allMoviesLoaded=true;
-		return this;
 	}
 });
 Location = Backbone.Model.extend({
@@ -149,7 +150,6 @@ Locations = Backbone.Collection.extend({
 			// I know there might be better ways, but I better have everything broken down into simple actions. 
 			aLocation.view.set({parent: this.get('parent') });
 			aLocation.set({parent: this.get('parent') });
-			debugger;
 			aLocation.view.render();
 		});	
 	}
@@ -214,7 +214,6 @@ MovieView = Backbone.View.extend({
 	choseMovie: function(){
 		console.log('he clicked me, the movie');
 		myRouter.navigate('movie/'+this.model.get('title'), {trigger:true});
-		debugger;
 		$('.listOfLocations .aMovie').addClass('lessInfo');	
 		var theMovie = $('.listOfLocations .aMovie[data-name="'+this.model.get('title')+'"]');
 		$('.listOfLocations').animate({ scrollTop: theMovie.offset().top + theMovie.parent().scrollTop() });
@@ -222,9 +221,13 @@ MovieView = Backbone.View.extend({
 		for(var i = 0; i < markerArray.length; i++){
 			markerArray[i].setVisible(false);
 		}
-		debugger;
 		this.model.locations.each( function(model){
-			model.get('myMarker').setVisible(true);
+			theMarker = model.get('myMarker');
+			if(theMarker == null){
+				model.view.createMarker();
+			}else{
+				theMarker.setVisible(true);
+			}
 		});
 	}
 });
@@ -300,7 +303,6 @@ Router = Backbone.Router.extend({
 		   	}, 10000);
 		}else{
 			$('.listOfLocations .aMovie[data-name="'+title+'"]').click();
-			debugger;
 		}
 	},
 	random: function(){
@@ -319,7 +321,6 @@ Router = Backbone.Router.extend({
 						return model.get('locations') == aRandomMovie.get('locations'); 
 					});	
 					if(persist != null && persist != model){
-						debugger;
 						persist.set({title: persist.get('title') +" &\n "+ model.get('title') });
 						theRandomMovies.remove( model );
 					}
