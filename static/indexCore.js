@@ -127,9 +127,12 @@ LocationView = Backbone.View.extend({
 		google.maps.event.addListener(newMarker, 'click', function(){
 			if( $('.aMovie.moreInfo').length == 0 ){
 				theTitle = that.model.get('title');		
-				$('.aMovie[data-name="'+theTitle+'"]').mousedown();
+				$('.aMovie[data-name="'+theTitle+'"]').mousedown(function(){
+					that.$el.mousedown();
+				});
+			}else{
+				that.$el.mousedown();
 			}
-			that.$el.mousedown();
 		});
 		google.maps.event.addListener(newMarker, 'mouseover', function(){
 			that.$el.addClass('markerHovered');
