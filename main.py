@@ -1,4 +1,4 @@
-import os # for the sqlite3 database
+import os # for the sqlite3 database file
 import random
 import json
 import sqlite3
@@ -10,7 +10,7 @@ app.config.update( dict(
 ))
 
 
-tableOrder = ["release_year", "title", "fun_facts", "writer", "actor_1", "locations", "actor_3", "actor_2", "director", "production_company", "distributor"]
+tableOrder = ["release_year", "title", "fun_facts", "writer", "actor_1", "locations", "actor_3", "actor_2", "director", "production_company", "distributor", "lat", "lon"]
 
 #this function is meant to concatenate a JSON response from what sqlite3 returns.
 #TODO must find an alternative
@@ -37,7 +37,14 @@ def formatSqliteForJSON2( entries ):
 		out += '{'
 		out += '"id": "'+str(i)+'"'
 		for j in range( len(tableOrder) ):
-			out += ', "'+tableOrder[j]+'": '+json.dumps(str(item[j].encode('utf-8') if item[j] else item[j] ))
+			if item[j]:
+				if type(item[j]) is float:
+					theItem = str( item[j] )		
+				else:
+					theItem = item[j].encode('utf-8')
+			else:
+				theItem = item[j]
+			out += ', "'+tableOrder[j]+'": '+json.dumps(str( theItem ))
 		out += '}'
 		i += 1
 	out += ']'
@@ -60,12 +67,28 @@ def searchTitle():
 	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
 
+@app.route('/test', methods=['GET'])
+def test():
+#this page returns a JSON string of all the movie titles which resemble what the user typed in
+	#Get the q argument in the url
+	query = str(request.args.get('q'))
+	db = getDb()
+	#search the db
+	results = db.execute('select distinct title from row where 1;') # TODO or should we change %like% to %like. ? 
+	entries = results.fetchall() # TODO
+	for i in range( len( (entries) ) ):
+		out = {}
+		for column in entries[i].__table__.columns:
+			out[column.name] = getattr(entries[i], column.name)
+	return Response(out, mimetype="application/json")
+
 @app.route('/infoOnTitle', methods=['GET'])
 def infoOnTitle():
 	query = str(request.args.get('q'))
 	db = getDb()
 	#search the db
-	results = db.execute('select * from row where title="'+query+'" group by title;') # TODO or should we change %like% to %like. ? 
+	dbQuery = 'select * from row where title="'+query+'" limit 1;'
+	results = db.execute(dbQuery) # TODO or should we change %like% to %like. ? 
 	entries = results.fetchall() # TODO
 	out = formatSqliteForJSON2( entries )
 	out = out[1:len(out)-1]
@@ -108,6 +131,13 @@ def randomMovieLocations():
 	entries = entries[0:5]
 	out = formatSqliteForJSON2( entries )
 	return Response(out, mimetype="application/json")
+
+def initDb():
+	with app.app_context():
+		db = getDb()
+		with app.open_resource('schema.sql', mode='r') as f:
+			db.cursor().executescript(f.read())
+		db.commit()
 	
 def connectDb():
 #this function connects us to the sqlite3

@@ -1,15 +1,16 @@
 var map;
 var markerArray = [];
 function initialize(){
-// turn google maps on
 	var mapOptions = {
-		//center it on SF
 		center: new google.maps.LatLng(37.774929, -122.419416),
-		zoom: 12
+		zoom: 12,
+		mapTypeControl: true,
+		mapTypeControlOptions: {
+			position: google.maps.ControlPosition.BOTTOM_LEFT
+		}
 	};
 	map = new google.maps.Map( document.getElementById('mapCanvas'), mapOptions);
 }
-//turn google maps on when the page loads
 google.maps.event.addDomListener(window, 'load', initialize);
 geocoder = new google.maps.Geocoder();
 
@@ -47,17 +48,17 @@ function lessInfo( theAttributeYouWantToDisplayAsSubtitle ){
 	*/
 }
 function moreInfo(){
-	return lessInfo( ['title', 'release_date', 'fun_facts', 'actor_1', 'actor_2', 'actor_3', 'production_company', 'director', 'locations', 'writer', 'distributor'] );
+	return lessInfo( ['title', 'release_year', 'fun_facts', 'actor_1', 'actor_2', 'actor_3', 'production_company', 'director', 'locations', 'writer', 'distributor'] );
 }
 
 function userify( word ){ // Return prettier words for the user to read. ex: actor_1 -> First actor
 	return dictionary[word] != undefined ? dictionary[word] : word;	
 } var dictionary = {
 	"title":"Title",
-	"release_date": "Release Date",
+	"release_year": "Release Year",
 	"production_company": "Production Company",
 	"director":"Director",
-	"actor_1": "First actor",
+	"actor_1": "Actors",
 	"actor_2":"Second actor",
 	"actor_3":"Third actor",
 	"locations": "Locations",
@@ -66,24 +67,34 @@ function userify( word ){ // Return prettier words for the user to read. ex: act
 
 function templateLocationForList( t ){
 	out = "<div data-id=l"+t.id+" class='aLocation'>";
-	out += '<span class="location">Location: '+t.get('locations')+'<br/></span>';
+	out += '<span class="location"><div class="locationIcon">L</div> '+t.get('locations')+'</span>';
 	out += "</div>";
 	return out;
 }
 
 LocationView = Backbone.View.extend({
 	events: {
-		'click': 'showLocation'
+		'mousedown': 'showLocation',
+		'mouseenter': 'highlightMarker',
+		'mouseleave': 'unHighlightMarker'
+	},
+	highlightMarker: function(e){
+		this.model.get('myMarker').setIcon('static/images/video2.png');
+	},
+	unHighlightMarker: function(e){
+		this.model.get('myMarker').setIcon('static/images/video1.png');
 	},
 	showLocation: function(e){
 		e.stopImmediatePropagation();
 		e.stopPropagation();
 		e.preventDefault();
+		$('.listOfLocations').animate({ scrollTop: this.$el.offset().top + this.$el.parents('.listOfLocations').scrollTop() - 30  }); // TODO remove -10
 		console.log('he clicked me');
 		$('.aLocation').addClass('lessInfo');
+		$('.aLocation.moreInfo').removeClass('moreInfo');
 		this.$el.removeClass('lessInfo');
+		this.$el.addClass('moreInfo');
 		map.panTo( this.model.get('LatLng') );
-		myRouter.navigate('movie/'+encodeURI( this.model.get('title') ), {trigger: true}); // TODO instead of encodeURI, change spaces for -dashes?
 		//$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
 	},
 	render: function(){
@@ -100,33 +111,40 @@ LocationView = Backbone.View.extend({
 	},
 	createMarker: function(){
 		theLocation = this.model.get('locations') + " San Francisco";
+		lat = this.model.get('lat');
+		lat = parseFloat( lat );
+		lon = this.model.get('lon');
+		lon = parseFloat( lon );
 		var that = this;
-		geocoder.geocode({ address: theLocation }, function(results, status){
-			if(results == null){
-				console.log('google did not want to geolocate this address');
-				return;
-			}
-			theLatLng = results[0].geometry.location; 
-			that.model.set('LatLng', theLatLng);
-			markerTitle = that.model.get('title') + ' ' + that.model.id;
-			newMarker = new google.maps.Marker({
-				position: theLatLng,
-				map: map,
-				title: markerTitle
-			});
-			google.maps.event.addListener(newMarker, 'click', function(){
-				that.$el.click();
-			});
-			markerArray.push( newMarker );
-			that.model.set({myMarker: newMarker});
+		theLatLng = new google.maps.LatLng( lon, lat ); 
+		that.model.set('LatLng', theLatLng);
+		markerTitle = that.model.get('title') + ' ' + that.model.id;
+		newMarker = new google.maps.Marker({
+			position: theLatLng,
+			map: map,
+			title: markerTitle
 		});
+		google.maps.event.addListener(newMarker, 'click', function(){
+			if( $('.aMovie.moreInfo').length == 0 ){
+				theTitle = that.model.get('title');		
+				$('.aMovie[data-name="'+theTitle+'"]').mousedown();
+			}
+			that.$el.mousedown();
+		});
+		google.maps.event.addListener(newMarker, 'mouseover', function(){
+			that.$el.addClass('markerHovered');
+		});
+		google.maps.event.addListener(newMarker, 'mouseout', function(){
+			that.$el.removeClass('markerHovered');
+		});
+		markerArray.push( newMarker );
+		that.model.set({myMarker: newMarker});
 	}
 });
 Location = Backbone.Model.extend({
 	initialize: function(){
 		//!!! this.LatLng =  __geolocate( this.location )__;
 		
-		//debugger;
 		// maybe add bounds to the request?
 		// maybe add a region to the request?
 		var that = this;
@@ -193,7 +211,7 @@ MovieView = Backbone.View.extend({
 	
 	},
 	events:{
-		'click': 'choseMovie'
+		'mousedown': 'choseMovie'
 	},
 	render: function(){
 		$('.listOfLocations').append( this.templateOfMovie(this.model) );		
@@ -201,26 +219,30 @@ MovieView = Backbone.View.extend({
 		this.delegateEvents();
 	},
 	templateOfMovie: function( t ){
-		out = "<div data-id="+t.id+" class='aMovie lessInfo' data-name='"+t.get('title')+"'>";
+		out = "<div data-id="+t.id+" class='aMovie lessInfo' data-name=\""+t.get('title')+"\">";
 		at = t.attributes;
 		out += '<span class="theTitle">'+at['title']+'<br/></span>';
 		out += '<div class="extra">';
 		for(a in at){
-			out += '<span class='+a+'>'+userify(a)+': '+at[a]+'<br/></span>';
+			out += '<span class='+a+'><span class="st">'+userify(a)+':</span><div class="bt">'+at[a]+'</div></span>';
 		}	
 		out += "<div class='theLocations'></div>";
 		out += '</div>';
 		out += "</div>";
-		out += '</br>';
 		return out;
 	},
 	choseMovie: function(){
+		var theMovie = $('.aMovie[data-name="'+this.model.get('title')+'"]');
+		$('.aMovie.moreInfo').removeClass('moreInfo');
+		$('.listOfLocations .aMovie').addClass('lessInfo');	
+		if ( this.$el.data('name') != $('.moreInfo.aMovie').data('name') ){
+		$('.listOfLocations').animate({ scrollTop: theMovie.offset().top + theMovie.parents('.listOfLocations').scrollTop() - 30  }); // TODO remove -10
+		}
 		console.log('he clicked me, the movie');
 		myRouter.navigate('movie/'+this.model.get('title'), {trigger:true});
-		$('.listOfLocations .aMovie').addClass('lessInfo');	
-		var theMovie = $('.listOfLocations .aMovie[data-name="'+this.model.get('title')+'"]');
-		$('.listOfLocations').animate({ scrollTop: theMovie.offset().top + theMovie.parent().scrollTop() });
+
 		theMovie.removeClass('lessInfo');
+		theMovie.addClass('moreInfo');
 		for(var i = 0; i < markerArray.length; i++){
 			markerArray[i].setVisible(false);
 		}
@@ -302,10 +324,10 @@ Router = Backbone.Router.extend({
 		if(allMoviesLoaded == false){
 			this.all();	
 			window.setTimeout( function(){
-				$('.listOfLocations .aMovie[data-name="'+title+'"]').click();
+				$('.listOfLocations .aMovie[data-name="'+title+'"]').mousedown();
 		   	}, 10000);
 		}else{
-			$('.listOfLocations .aMovie[data-name="'+title+'"]').click();
+			$('.listOfLocations .aMovie[data-name="'+title+'"]').mousedown();
 		}
 	},
 	random: function(){
@@ -337,10 +359,18 @@ Router = Backbone.Router.extend({
 	},
 	all: function(){
 
-		removeAllMarkers();
-		allMovies = new Movies();
-		allMovies.url = '/allTitles';
-		allMovies.fetch();
+		
+		$('.moreInfo').addClass('lessInfo').removeClass('moreInfo');
+		if( !allMoviesLoaded ){
+			removeAllMarkers();
+			allMovies = new Movies();
+			allMovies.url = '/allTitles';
+			allMovies.fetch();
+		}else{
+			for(var i = 0; i < markerArray.length; i++){
+				markerArray[i].setVisible(true);
+			}
+		}
 	}
 });
 var myRouter = new Router();
