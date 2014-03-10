@@ -67,21 +67,6 @@ def searchTitle():
 	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
 
-@app.route('/test', methods=['GET'])
-def test():
-#this page returns a JSON string of all the movie titles which resemble what the user typed in
-	#Get the q argument in the url
-	query = str(request.args.get('q'))
-	db = getDb()
-	#search the db
-	results = db.execute('select distinct title from row where 1;') # TODO or should we change %like% to %like. ? 
-	entries = results.fetchall() # TODO
-	for i in range( len( (entries) ) ):
-		out = {}
-		for column in entries[i].__table__.columns:
-			out[column.name] = getattr(entries[i], column.name)
-	return Response(out, mimetype="application/json")
-
 @app.route('/infoOnTitle', methods=['GET'])
 def infoOnTitle():
 	query = str(request.args.get('q'))
@@ -93,8 +78,6 @@ def infoOnTitle():
 	out = formatSqliteForJSON2( entries )
 	out = out[1:len(out)-1]
 	return Response(out, mimetype="application/json")
-
-
 
 @app.route('/locationsOfMovie', methods=['GET'])
 def searchMovieLocations():
@@ -108,10 +91,6 @@ def searchMovieLocations():
 	entries = results.fetchall() # TODO
 	out = formatSqliteForJSON2( entries )
 	return Response(out, mimetype="application/json")
-
-@app.route('/test1', methods=['GET'])
-def test1():
-	return '[{"foo":"AA"},{"foo":"BB"},{"foo":"CC"}]'
 	
 @app.route('/locationsOfRandomMovies', methods=['GET'])
 def randomMovieLocations():

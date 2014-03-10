@@ -17,6 +17,3 @@ I made three simple tests as a proof of concept for the back-end
 To test main.py, just run: $ python main_tests.py
 
 An imporvement that could be made in the app would be to have the markers which represent multiples movies have a title as a list of those movies names. For example, there were many movies filmed on the Golden Gate Bridge. So, the title of the marker on the GGB could be all of those movies' names.
-
-If I would've had more time, I would've filtered out the data which was undefined by the SF database. For example, sometimes there are no second or third actors.
-For all of the movies which have a location that points to nowhere, as defined by the database, I just put a marker to where the geocoder identifies as "San Francisco"

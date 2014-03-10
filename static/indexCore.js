@@ -12,9 +12,10 @@ function initialize(){
 	map = new google.maps.Map( document.getElementById('mapCanvas'), mapOptions);
 }
 google.maps.event.addDomListener(window, 'load', initialize);
-geocoder = new google.maps.Geocoder();
 
 listOfUniqueTitles = [];
+//TODO
+
 $(function(){
 	$('.searchBox').autocomplete({
 		source: listOfUniqueTitles
@@ -24,7 +25,7 @@ $(function(){
 		myRouter.navigate('movie/'+encodeURI(ui.item.value), {trigger: true}); // TODO instead of encodeURI, change spaces for -dashes?
 	});
 });
-
+/*
 SearchResult = Backbone.Model.extend({
 	initialize: function(){
 
@@ -33,23 +34,8 @@ SearchResult = Backbone.Model.extend({
 		$('.searchResults').append('<li class=".'+this.get('title')+'">'+this.get('title')+'</li>');	
 	}
 });
+*/
 
-
-function lessInfo( theAttributeYouWantToDisplayAsSubtitle ){
-
-	/*
-	out = "";
-	out += "<div class='.smallLocation'>";
-	foreach attr in foo{
-		out += "<li>"+userify(attr)+": "+this.get(attr)+"</li>";
-	}
-	out += "</div>";
-	return out;
-	*/
-}
-function moreInfo(){
-	return lessInfo( ['title', 'release_year', 'fun_facts', 'actor_1', 'actor_2', 'actor_3', 'production_company', 'director', 'locations', 'writer', 'distributor'] );
-}
 
 function userify( word ){ // Return prettier words for the user to read. ex: actor_1 -> First actor
 	return dictionary[word] != undefined ? dictionary[word] : word;	
@@ -122,7 +108,8 @@ LocationView = Backbone.View.extend({
 		newMarker = new google.maps.Marker({
 			position: theLatLng,
 			map: map,
-			title: markerTitle
+			title: markerTitle,
+			icon: 'static/images/video1.png'
 		});
 		google.maps.event.addListener(newMarker, 'click', function(){
 			if( $('.aMovie.moreInfo').length == 0 ){
@@ -146,10 +133,6 @@ LocationView = Backbone.View.extend({
 });
 Location = Backbone.Model.extend({
 	initialize: function(){
-		//!!! this.LatLng =  __geolocate( this.location )__;
-		
-		// maybe add bounds to the request?
-		// maybe add a region to the request?
 		var that = this;
 		this.view = new LocationView({model: this});
 	}
@@ -265,18 +248,6 @@ Movies = Backbone.Collection.extend({
 	model: Movie
 });
 
-
-SearchResults = Backbone.Collection.extend({
-	model: SearchResult,
-	url: '/search',
-	render: function(){
-		$('.searchResults').empty();
-		for(var i=0; i< this.length; i++){
-			this.models[i].render();
-		}
-	}
-});
-
 AllTitles = Backbone.Collection.extend({
 	model: SearchResult,
 	url: '/allTitles',
@@ -293,15 +264,15 @@ theAllTitles.fetch({
 		$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
 	},
 	error: function(){
-		console.log('something bad happened');
+		console.log('something bad happened relative to /allTitles');
 	}
 });
 
 function removeAllMarkers(){
-for(i=0; i< markerArray.length; i++){
-	markerArray[i].setMap(null) ;
-}
-markerArray = [];
+	for(i=0; i< markerArray.length; i++){
+		markerArray[i].setMap(null) ;
+	}
+	markerArray = [];
 }
 
 // var selectedItem; => selectedMovie
@@ -313,17 +284,6 @@ Router = Backbone.Router.extend({
 		'movie/:title': 'showMovieLocations'
 	},
 	showMovieLocations: function(title){
-		/*
-		removeAllMarkers();
-		console.log('the title is: ' + title);
-		// clear search view
-		// initiate locations view
-		theLocationsList = new Locations();
-		theLocationsList.fetch({reset: true, data:{'q': title }, success: function(){
-			$('.listOfLocations').empty();
-			theLocationsList.display();
-		}});
-		*/
 		if(allMoviesLoaded == false){
 			this.all();	
 			window.setTimeout( function(){
@@ -379,4 +339,3 @@ Router = Backbone.Router.extend({
 var myRouter = new Router();
 Backbone.history.start();
 var mainPage = new Router();
-var theSearchResults = new SearchResults();

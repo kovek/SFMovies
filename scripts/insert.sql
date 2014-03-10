@@ -1,0 +1,1 @@
+INSERT INTO table VALUES('1980','Can''t Stop the Music',NULL,'Allan Carr',NULL,'101 Henry Adams Place',NULL,NULL,'Nancy Walker','EMI Films','Associated Film Distribution (AFD)',-122.4036728,37.7678455);
