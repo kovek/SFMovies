@@ -9,9 +9,6 @@ app.config.update( dict(
 	DATABASE=os.path.join(app.root_path, 'xmlsqlite.db3'),
 ))
 
-
-tableOrder = ["release_year", "title", "fun_facts", "writer", "actor_1", "locations", "actor_3", "actor_2", "director", "production_company", "distributor", "lat", "lon"]
-
 #this function is meant to concatenate a JSON response from what sqlite3 returns.
 #TODO must find an alternative
 def formatSqliteForJSON( entries ):
@@ -21,22 +18,7 @@ def formatSqliteForJSON( entries ):
 		if i!=0: out += ", "
 		out += '{'
 		out += '"id": "'+str(i)+'"'
-		for j in range(len([1])):
-			#out += ', "'+tableOrder[j]+'": '+json.dumps(str(item[j].encode('utf-8') if item[j] else item[j] ))
-			out += ', "title": '+json.dumps(str(item[j].encode('utf-8') if item[j] else item[j] ))
-		out += '}'
-		i += 1
-	out += ']'
-	return out
-
-def formatSqliteForJSON2( entries ):
-	out = '['
-	i = 0
-	for item in entries:
-		if i!=0: out += ", "
-		out += '{'
-		out += '"id": "'+str(i)+'"'
-		for j in range( len(tableOrder) ):
+		for j in range( len(item) ):
 			if item[j]:
 				if type(item[j]) is float:
 					theItem = str( item[j] )		
@@ -44,10 +26,10 @@ def formatSqliteForJSON2( entries ):
 					theItem = item[j].encode('utf-8')
 			else:
 				theItem = item[j]
-			out += ', "'+tableOrder[j]+'": '+json.dumps(str( theItem ))
+			out += ', "'+item.keys()[j]+'": '+json.dumps(str( theItem ))
 		out += '}'
 		i += 1
-	out += ']'
+	out += ']'     
 	return out
 
 @app.route('/')
@@ -72,10 +54,10 @@ def infoOnTitle():
 	query = str(request.args.get('q'))
 	db = getDb()
 	#search the db
-	dbQuery = 'select * from row where title="'+query+'" limit 1;'
+	dbQuery = 'select title, release_year, fun_facts, writer, actor_1, actor_3, actor_2, director, production_company, distributor from row where title="'+query+'" limit 1;'
 	results = db.execute(dbQuery) # TODO or should we change %like% to %like. ? 
 	entries = results.fetchall() # TODO
-	out = formatSqliteForJSON2( entries )
+	out = formatSqliteForJSON( entries )
 	out = out[1:len(out)-1]
 	return Response(out, mimetype="application/json")
 
@@ -87,9 +69,9 @@ def searchMovieLocations():
 	db = getDb()
 	#search the db
 	print query
-	results = db.execute('select * from row where title = "'+query+'";')
+	results = db.execute('select locations, lat, lon from row where title = "'+query+'";')
 	entries = results.fetchall() # TODO
-	out = formatSqliteForJSON2( entries )
+	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
 	
 @app.route('/locationsOfRandomMovies', methods=['GET'])
@@ -108,7 +90,7 @@ def randomMovieLocations():
 			entries.remove(entry)
 	random.shuffle(entries)
 	entries = entries[0:5]
-	out = formatSqliteForJSON2( entries )
+	out = formatSqliteForJSON( entries )
 	return Response(out, mimetype="application/json")
 
 def initDb():

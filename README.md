@@ -1,5 +1,3 @@
-To set up the database, run xmltosqlite.py on this directory. It will process filmLocations.csv to create xmlsqlite.db3
-
 To get the server runnning:
 $/var/www/uberProject/: . venv/bin/activate
 $/var/www/uberProject/: python main.py
@@ -12,6 +10,8 @@ Steps I've taken to generate the database:
 5. 	>alter table main.row add 'lat' REAL;
 6. 	>alter table main.row add 'lon' REAL;
 7. Then, I wrote a small file which geolocates all of the addresses and inputs them into the database: $: geolocate.py
+Note: I appended "San Francisco" to all of the addresses. This means that all of the movies that have "None" as location will have a marker just in the middle of San Francisco. Also, for some reason, google returned a latlon which is not in San Francisco. This small issue should be investigated quickly, as it is not supposed to happen
+Note: For some locations(about 10 of them), google did not return anything, I don't really know why, since I appended "San Francisco". This is why when one of those locations gets clicked on, the google maps glitches.
 
 I made three simple tests as a proof of concept for the back-end
 To test main.py, just run: $ python main_tests.py

@@ -1,0 +1,122 @@
+html, body{
+height:100%;
+width:75%;
+overflow:hidden;
+font-family: helvetica;
+}
+
+.mapContainer{
+position:absolute;
+z-index:1;
+height:100%;
+width:100%;
+top:0;
+left:0;
+}
+
+.markerHovered{
+color: red;
+}
+
+.extra{
+}
+
+.searchBox{
+width:100%;
+}
+
+.aMovie.moreInfo{
+padding-top: 20px;
+padding-bottom: 20px;
+}
+
+.aMovie{
+margin-top:5px;
+}
+
+.location{
+
+}
+
+.st {
+font-family: helvetica;
+font-weight: bold;
+font-size: small;
+}
+.bt {
+font-family: helvetica;
+font-weight: lighter;
+margin: 10px;
+top: 5px;
+}
+.locations {
+display: none;
+}
+.lat{
+display: none;
+}
+.lon{
+display: none;
+}
+.title{
+display: none;
+}
+.actor_2 .st{
+display: none;
+}
+.actor_3 .st{
+display: none;
+}
+
+.searchContainer{
+z-index:2;
+position:absolute;
+width:25%;
+margin-left:70%;
+float:right;
+height:90%;
+top:0;
+background:white;
+}
+
+.listOfLocations{
+	overflow-y:scroll;
+	height:90%;
+	padding:10px;
+}
+
+.fun_facts{
+	display:none;
+}
+.lessInfo .actor_2{
+	display:none;
+}
+.lessInfo .theLocations{
+	display:none;
+}
+
+.lessInfo .extra{
+	display:none;
+}
+.lessInfo .actor_3{
+	display:none;
+}
+.lessInfo .writer{
+	display:none;
+}
+.lessInfo .distributor{
+	display:none;
+}
+.lessInfo .production_company{
+	display:none;
+}
+.id{
+	display:none;
+}
+
+.aLocation{
+	margin-left:1em;
+	margin-top:0.5em;
+	margin-bottom:0.5em;
+	background: white;
+}
