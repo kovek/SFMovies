@@ -1,5 +1,6 @@
 var map;
 var markerArray = [];
+var listOfUniqueTitles = [];
 function initialize(){
 	var mapOptions = {
 		center: new google.maps.LatLng(37.774929, -122.419416),
@@ -14,10 +15,14 @@ function initialize(){
 }
 google.maps.event.addDomListener(window, 'load', initialize);
 
-listOfUniqueTitles = [];
-//TODO
+
+function removeLoading(){
+// Remove the loading layer
+	$('.loadingDiv').addClass('hidden');
+}
 
 function removeAllMarkers(){
+// Remove all of the google map markers
 	for(i=0; i< markerArray.length; i++){
 		markerArray[i].setMap(null) ;
 	}
@@ -38,32 +43,27 @@ function userify( word ){ // Return prettier words for the user to read. ex: act
 	"distributor": "Distributor",
 	"writer":"Writer"};
 
-
+// This variable will be incremented until it reaches the number of locations on the server.
+// When it reaches that amount, the loading is removed
 var numberOfRenderedLocations = 0;
+
 function googlemapsLoaded(){
+// We need this method because unless the map is loaded, we cannot add any markers to it.
 	$('.searchBox').autocomplete({
-		source: listOfUniqueTitles
+		source: listOfUniqueTitles 
+		// Remark: The source is empty at first.
+		// It is modified when all of the titles are fetched from the server.
 	});
 	$('.searchBox').on('autocompleteselect', function(event, ui){
-		Backbone.history.fragment = null;
-		myRouter.navigate('movie/'+encodeURI(ui.item.value), {trigger: true}); // TODO instead of encodeURI, change spaces for -dashes?
+		router.navigate('movie/'+encodeURI(ui.item.value), {trigger: true});
+		// For a prettier url, instead of using encodeURI, change spaces for -dashes
 	});
 
-	SearchResult = Backbone.Model.extend({
-		initialize: function(){
-
-		},
-		render: function(){
-			$('.searchResults').append('<li class=".'+this.get('title')+'">'+this.get('title')+'</li>');	
-		}
-	});
-
-
-
+	SearchResult = Backbone.Model.extend({});
 
 	LocationView = Backbone.View.extend({
 		events: {
-			'mousedown': 'showLocation',
+			'mouseup': 'showLocation',
 			'mouseenter': 'highlightMarker',
 			'mouseleave': 'unHighlightMarker'
 		},
@@ -74,66 +74,61 @@ function googlemapsLoaded(){
 			this.model.get('myMarker').setIcon('static/images/video1.png');
 		},
 		showLocation: function(e){
+			// Scroll to this location and pan to its corresponding marker
 			e.stopImmediatePropagation();
 			e.stopPropagation();
-			e.preventDefault();
-			$('.listOfLocations').animate({ scrollTop: this.$el.offset().top + this.$el.parents('.listOfLocations').scrollTop() - 30  }); // TODO remove -10
-			console.log('he clicked me');
-			$('.aLocation').addClass('lessInfo');
+			$('.listOfLocations').animate({ scrollTop: this.$el.offset().top + this.$el.parents('.listOfLocations').scrollTop() - 30  });
 			$('.aLocation.moreInfo').removeClass('moreInfo');
-			this.$el.removeClass('lessInfo');
 			this.$el.addClass('moreInfo');
 			map.panTo( this.model.get('LatLng') );
-			//$('.listOfLocations').animate({ scrollTop: this.$el.offset().top });
 		},
 		templateLocationForList: function( t ){
+			// The html of the location view
 			out = "<div data-id=l"+t.id+" class='aLocation'>";
 			out += '<span class="location">'+t.get('locations')+'</span>';
 			out += "</div>";
 			return out;
 		},
 		render: function(){
-			theHtml = this.templateLocationForList( this.model );
-			var movieEl = $('.listOfLocations .aMovie[data-name="'+this.model.get('movie').get('title')+'"]');
+			// Render the location under the title in the list and on the map.
+			var theHtml = this.templateLocationForList( this.model );
+			var movieEl = $('.listOfLocations .aMovie[data-title="'+this.model.get('movie').get('title')+'"]');
 			movieEl.find('.theLocations').append( theHtml );
 			this.$el = movieEl.find('.aLocation[data-id=l'+this.model.id+']');
 			this.delegateEvents();
-			//myRouter.selectMovie();
 			this.createMarker();
 			numberOfRenderedLocations++;
-			if( numberOfRenderedLocations > 889 ){ // number of rows found by doing select count(*) from row - 2
+			if( numberOfRenderedLocations > 889 ){ // 889 is the number of rows found by doing select count(*) from row in the database - 2
 				allMoviesLoaded=true;
-				myRouter.showMovieLocations();
+				router.showMovieLocations();
+				removeLoading();
 			}
 			return this;
 		},
 		createMarker: function(){
-			lat = this.model.get('lat');
-			lat = parseFloat( lat );
-			lon = this.model.get('lon');
-			lon = parseFloat( lon );
+			var lat = parseFloat( this.model.get('lat') );
+			var lon = parseFloat( this.model.get('lon') );
 			var that = this;
-			theLatLng = new google.maps.LatLng( lat, lon ); 
-			that.model.set('LatLng', theLatLng);
-			if(	movieTitle = that.model.get('movie') == undefined ){
-				debugger;
-			}
-			movieTitle = this.model.get('movie').get('title')
-			markerTitle = movieTitle + ' ' + that.model.id;
+			var latLng = new google.maps.LatLng( lat, lon ); 
+			that.model.set('LatLng', latLng);
+
+			var movieTitle = this.model.get('movie').get('title')
+			var markerTitle = movieTitle + ' ' + that.model.id;
 			newMarker = new google.maps.Marker({
-				position: theLatLng,
+				position: latLng,
 				map: map,
 				title: markerTitle,
 				icon: 'static/images/video1.png'
 			});
 			google.maps.event.addListener(newMarker, 'click', function(){
 				if( $('.aMovie.moreInfo').length == 0 ){
-					$('.aMovie[data-name="'+that.model.get('movie').get('title')+'"] .theTitle').mousedown();
-						//function(){
-						that.$el.mousedown();
-					//})
+					$('.aMovie[data-title="'+that.model.get('movie').get('title')+'"] .theTitle').mouseup();
+
+					that.$el.mouseup();
+					// This should be in the callback of the mouseup() of movie item to make sure this one is called after the previous one
+					// For some reason, having this call in the callback did not work...
 				}else{
-					that.$el.mousedown();
+					that.$el.mouseup();
 				}
 			});
 			google.maps.event.addListener(newMarker, 'mouseover', function(){
@@ -148,7 +143,6 @@ function googlemapsLoaded(){
 	});
 	Location = Backbone.Model.extend({
 		initialize: function(){
-			var that = this;
 			this.view = new LocationView({model: this});
 		}
 	});
@@ -160,40 +154,28 @@ function googlemapsLoaded(){
 		display: function(){
 			var that = this;
 			this.each( function(aLocation){
-				// I am not exactly sure which method should be used to display the locations list!
-				// I will be calling the render function of each view created by each location.
-				// I know there might be better ways, but I better have everything broken down into simple actions. 
-				aLocation.view.set({parent: this.get('parent') });
-				aLocation.set({parent: this.get('parent') });
 				aLocation.view.render();
 			});	
 		}
 	});
 	Movie = Backbone.Model.extend({
-		that: null,
-		url: 'infoOnTitle',
+		url: '/movieInfo',
 		initialize: function(){
-			that = this;
 			this.fetch({
 				data:{
 					'q': this.get('title')
 				},
 				success: function(model, response, options){
-					aMovieView = new MovieView({model: model});
-					aMovieView.render();
+					var movieView = new MovieView({model: model});
+					movieView.render();
 
-					theTitle = model.get('title');
-					parentModel = model;
 					model.locations = new Locations();
-					model.locations.url = '/locationsOfMovie';
-					model.locations.set({parent: theTitle});
-					model.locations.fetch({reset:true,
+					model.locations.url = '/movieLocations';
+					model.locations.fetch({reset:true, // Fetch the locations of that movie
 						data: {'q': model.get('title') },
-						parentModel: parentModel,
+						parentModel: model, // We pass model to parentModel to then set the locations' "movie" property as model
 						success: function(collection, response, options){
-							collection.each( function(model){ model.set('movie', options.parentModel); model.view.render(); });
-							aMovieView.$el = $(".aMovie[data-name='"+aMovieView.model.get('title')+"'] .title");	
-							aMovieView.delegateEvents();
+							collection.each( function(locationModel){ locationModel.set('movie', options.parentModel); locationModel.view.render(); });
 						}
 					});
 				}
@@ -202,19 +184,19 @@ function googlemapsLoaded(){
 
 	});
 	MovieView = Backbone.View.extend({
-		initialize: function(){
-		
-		},
 		events:{
-			'mousedown .theTitle': 'choseMovie'
+			'mouseup .theTitle': 'choseMovie'
 		},
 		render: function(){
 			$('.listOfLocations').append( this.templateOfMovie(this.model) );		
-			this.$el = $('.aMovie[data-name="'+this.model.get('title')+'"]'); 
+
+			// Link the movie view to its dom element and delegate the appropriate events
+			this.$el = $('.aMovie[data-title="'+this.model.get('title')+'"]'); 
 			this.delegateEvents();
 		},
 		templateOfMovie: function( t ){
-			out = "<div data-id="+t.id+" class='aMovie lessInfo' data-name=\""+t.get('title')+"\">";
+			// The html of the movie view
+			var out = "<div data-id="+t.id+" class='aMovie ' data-title=\""+t.get('title')+"\">";
 			at = t.attributes;
 			out += '<span class="theTitle">'+at['title']+'<br/></span>';
 			out += '<div class="extra">';
@@ -227,23 +209,21 @@ function googlemapsLoaded(){
 			return out;
 		},
 		choseMovie: function(){
-			var theMovie = $('.aMovie[data-name="'+this.model.get('title')+'"]');
 			$('.aMovie.moreInfo').removeClass('moreInfo');
-			$('.listOfLocations .aMovie').addClass('lessInfo');	
-			if ( this.model.get('title') != $('.moreInfo.aMovie').data('name') ){
-			$('.listOfLocations').animate({ scrollTop: theMovie.offset().top + theMovie.parents('.listOfLocations').scrollTop() - 30  }); // TODO remove -10
+			if ( this.model.get('title') != $('.moreInfo.aMovie').data('title') ){
+				$('.listOfLocations').animate({ scrollTop: this.$el.offset().top + this.$el.parents('.listOfLocations').scrollTop() - 30  });
 			}
-			console.log('he clicked me, the movie');
-			myRouter.navigate('movie/'+encodeURI(this.model.get('title')), {trigger:false});
+			router.navigate('movie/'+encodeURI(this.model.get('title')), {trigger:false});
 
-			theMovie.removeClass('lessInfo');
-			theMovie.addClass('moreInfo');
+			this.$el.addClass('moreInfo');
 			for(var i = 0; i < markerArray.length; i++){
 				markerArray[i].setVisible(false);
 			}
 			this.model.locations.each( function(model){
-				theMarker = model.get('myMarker');
+				var theMarker = model.get('myMarker');
 				if(theMarker == null){
+					// Since all of the markers have been loaded on page load, this block should never be reached 
+					// I'm leaving this here in case someone decides to remove the markers' render on page load
 					model.view.createMarker();
 				}else{
 					theMarker.setVisible(true);
@@ -257,29 +237,26 @@ function googlemapsLoaded(){
 		model: Movie
 	});
 
-	AllTitles = Backbone.Collection.extend({
+	SearchResults = Backbone.Collection.extend({
 		model: SearchResult,
-		url: '/allTitles',
+		url: '/search',
 	});
-	theAllTitles = new AllTitles();
-	theAllTitles.fetch({
+	allTitles = new SearchResults();
+	allTitles.url = '/allTitles';
+	allTitles.fetch({
 		reset:true,
-		success: function(){
+		success: function(){ // Unsure if I should do function(model){ or just access the model with allTitles. The second one seems clearer
 			listOfUniqueTitles = [];
-			console.log('got the results');
-			theAllTitles.each( function(aSearchResult){
+			allTitles.each( function(aSearchResult){
 				listOfUniqueTitles.push( aSearchResult.get('title') );
 			});
 			$('.searchBox').autocomplete("option", "source", listOfUniqueTitles);
 		},
 		error: function(){
-			console.log('something bad happened relative to /allTitles');
+			console.log('something bad happened relative to the server and /allTitles');
 		}
 	});
 
-
-
-	// var selectedItem; => selectedMovie
 	var allMoviesLoaded = false,
 	Router = Backbone.Router.extend({
 		routes: {
@@ -292,56 +269,45 @@ function googlemapsLoaded(){
 			this.all();
 		},
 		showMovieLocations: function(){
-			$('.listOfLocations .aMovie[data-name="'+this.title+'"] .theTitle').mousedown();
+			$('.listOfLocations .aMovie[data-title="'+this.title+'"] .theTitle').mouseup();
 		},
-		random: function(){
-
+		random: function(){ // Little feature to let the user discover new movies/locations.
 			removeAllMarkers();
-
-			theRandomMovies = new Locations();
-			theRandomMovies.url = '/locationsOfRandomMovies'
-			theRandomMovies.fetch({
+			var randomMoviesLocations = new Locations();
+			randomMoviesLocations.url = '/locationsOfRandomMovies'
+			randomMoviesLocations.fetch({
 				reset:true,
 				success: function(){
 					$('.listOfLocations').empty();
-					theRandomMovies.each( function(model){
-
-						var persist = theRandomMovies.find( function( aRandomMovie ){
+					randomMoviesLocations.each( function(model){
+						var persist = randomMoviesLocations.find( function( aRandomMovie ){
 							return model.get('locations') == aRandomMovie.get('locations'); 
 						});	
 						if(persist != null && persist != model){
 							persist.set({title: persist.get('title') +" &\n "+ model.get('title') });
-							theRandomMovies.remove( model );
+							randomMoviesLocations.remove( model );
 						}
 					});
-					theRandomMovies.display();
+					randomMoviesLocations.display();
 				},
-				error: function(){
-					console.log('something bad happened with the random movies');
-				}
 			});
 		},
 		all: function(){
-
-			
-			$('.moreInfo').addClass('lessInfo').removeClass('moreInfo');
+			$('.moreInfo').removeClass('moreInfo');
 			if( !allMoviesLoaded ){
-				removeAllMarkers();
-				allMovies = new Movies();
+				// The movies are not appearing in the list yet, so that's we'll do first.
+				removeAllMarkers(); // Just a measure of precaution, should not be mandatory
+				var allMovies = new Movies();
 				allMovies.url = '/allTitles';
 				allMovies.fetch();
 			}else{
 				for(var i = 0; i < markerArray.length; i++){
 					markerArray[i].setVisible(true);
 				}
-				$('.listOfLocations .aMovie[data-name="'+this.title+'"] .theTitle').mousedown();
+				$('.listOfLocations .aMovie[data-title="'+this.title+'"] .theTitle').mouseup();
 			}
 		},
-		selectMovie: function(){
-		
-		}
 	});
-	var myRouter = new Router();
+	var router = new Router();
 	Backbone.history.start();
-	var mainPage = new Router();
 }
