@@ -37,6 +37,8 @@ If I would've had more time, I would've filtered out the data which was undefine
 
 For all of the movies which have a location that points to nowhere, as defined by the database, I just put a marker to where the geocoder identifies as "San Francisco"
 
+Bug: There are small errors that get logged in the console. Those are not coming from my code and do not affect the app. Still, there should naturally be something done about them if possible.
+
 ## Other goodies
 
 I'm working on another project right now which I plan to release during the following month. It is related to road maintenance. I've included some description in my resume.
