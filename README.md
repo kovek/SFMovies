@@ -70,12 +70,19 @@ To search for a movie, query
 ### The Database
 
 Steps I've taken to generate the database:
+
 1. Download the xml file from: https://data.sfgov.org/Arts-Culture-and-Recreation-/Film-Locations-in-San-Francisco/yitu-d5am
+
 2. Download this xmltosqlite converter: https://gist.github.com/roder/743047
+
 3. Run $/SFMovies/: python xmltosqlite.py . 
+
 4. $: sqlite3 xmlsqlite.db3 
+
 5. 	>alter table main.row add 'lat' REAL;
+
 6. 	>alter table main.row add 'lon' REAL;
+
 7. Then, I wrote a small file which geolocates all of the addresses and inputs them into the database: $: geolocate.py
 Note: I appended "San Francisco" to all of the addresses. This means that all of the movies that have "None" as location will have a marker just in the middle of San Francisco. Also, for some reason, google returned a latlon which is not in San Francisco. This small issue should be investigated quickly, as it is not supposed to happen
 Note: For some locations(about 10 of them), google did not return anything, I don't really know why, since I appended "San Francisco". This is why when one of those locations gets clicked on, the google map glitches.
