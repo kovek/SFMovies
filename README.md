@@ -70,7 +70,7 @@ To search for a movie, query
 
 Steps I've taken to generate the database:
 1. Download the xml file from: https://data.sfgov.org/Arts-Culture-and-Recreation-/Film-Locations-in-San-Francisco/yitu-d5am
-2. Download this xmltosqlite converter: https://gist.github.com/roder/743047 
+2. Download this xmltosqlite converter: https://gist.github.com/roder/743047
 3. Run $/var/www/uberProjectHeroku/: python xmltosqlite.py . 
 4. $: sqlite3 xmlsqlite.db3 
 5. 	>alter table main.row add 'lat' REAL;
