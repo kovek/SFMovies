@@ -4,13 +4,13 @@
 	
 ## Choices
 
-### Back-end
+### Back-End
 
 Since most of Uber’s back-end is in Python, I decided to go with that, as I’ll have to work with it later on no matter what.
 I am given the possibility to use a web framework, but since there is a suggested microframework by Uber, I’ll go with it(Flask).
 I wanted to check out Flask and compare it to other microframeworks but when I realized how similar it is to Laravel and how practical it is, I decided to stick with it.
 
-### Front-end
+### Front-End
 
 Since Backbone.js is the recommended MVC, I will stick with that. Again, I might need to know how to use it since it might appear in Uber’s code.
 
@@ -40,15 +40,15 @@ For all of the movies which have a location that points to nowhere, as defined b
 
 Bug: There are small errors that get logged in the console. Those are not coming from my code and do not affect the app. Still, there should naturally be something done about them if possible.
 
-## Other goodies
+## Other Goodies
 
 I'm working on another project right now which I plan to release during the following month. It is related to road maintenance. I've included some description in my resume.
 
-## The howtos
+## The Howtos
 
 To get the server runnning:
-$/var/www/uberProject/: . venv/bin/activate
-$/var/www/uberProject/: python main.py
+$/SFMovies/: . venv/bin/activate
+$/SFMovies/: python main.py
 
 I made three simple proof of concept tests for the back-end
 To test main.py, just run: $ python maintests.py
@@ -72,7 +72,7 @@ To search for a movie, query
 Steps I've taken to generate the database:
 1. Download the xml file from: https://data.sfgov.org/Arts-Culture-and-Recreation-/Film-Locations-in-San-Francisco/yitu-d5am
 2. Download this xmltosqlite converter: https://gist.github.com/roder/743047
-3. Run $/var/www/uberProjectHeroku/: python xmltosqlite.py . 
+3. Run $/SFMovies/: python xmltosqlite.py . 
 4. $: sqlite3 xmlsqlite.db3 
 5. 	>alter table main.row add 'lat' REAL;
 6. 	>alter table main.row add 'lon' REAL;
