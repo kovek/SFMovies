@@ -34,6 +34,7 @@ Obviously, there are going to be more movies filmed in San Francisco, so the dat
 An imporvement that could be made in the app would be to have the markers which represent multiples movies have a title as a list of those movies names. For example, there were many movies filmed on the Golden Gate Bridge. So, the title of the marker on the GGB could be all of those movies' names.
 
 If I would've had more time, I would've filtered out the data which was undefined by the SF film locations database. For example, sometimes there are no second or third actors.
+
 For all of the movies which have a location that points to nowhere, as defined by the database, I just put a marker to where the geocoder identifies as "San Francisco"
 
 ## Other goodies
@@ -74,6 +75,6 @@ Steps I've taken to generate the database:
 6. 	>alter table main.row add 'lon' REAL;
 7. Then, I wrote a small file which geolocates all of the addresses and inputs them into the database: $: geolocate.py
 Note: I appended "San Francisco" to all of the addresses. This means that all of the movies that have "None" as location will have a marker just in the middle of San Francisco. Also, for some reason, google returned a latlon which is not in San Francisco. This small issue should be investigated quickly, as it is not supposed to happen
-Note: For some locations(about 10 of them), google did not return anything, I don't really know why, since I appended "San Francisco". This is why when one of those locations gets clicked on, the google maps glitches.
+Note: For some locations(about 10 of them), google did not return anything, I don't really know why, since I appended "San Francisco". This is why when one of those locations gets clicked on, the google map glitches.
 Note: If I would've had more time, I would have added an id column to the database to make the backbone fetching simpler.
 

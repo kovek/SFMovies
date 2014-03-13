@@ -16,7 +16,7 @@ def formatSqliteForJSON( entries ):
 	for item in entries:
 		if i!=0: out += ", "
 		out += '{'
-		out += '"id": "'+str(i)+'"' # Because the database was missing ids. 
+		out += '"id": "'+str(i)+'"' # Because the database is missing ids. 
 		for j in range( len(item) ):
 			if item[j]:
 				if type(item[j]) is float:
